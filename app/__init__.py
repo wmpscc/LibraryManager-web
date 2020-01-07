@@ -17,7 +17,7 @@ login_manager.login_message = u"请先登录。"
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'hard to guess string'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost:3306/bookmanage?charset=utf8mb4'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:wmpscc@localhost:3306/bookmanage?charset=utf8mb4'
     app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
     db.init_app(app)
     db.create_all(app=app)

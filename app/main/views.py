@@ -5,7 +5,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 import time
 from datetime import datetime, date
 from .. import db
-from ..models import Admin, Student, Faculty, BookType, Warehouse, Book, Query, Record, Inventory, Query_Faculty
+from ..models import Admin, Student, Faculty, BookType, Warehouse, Book, Query, Record, Inventory, Query_Faculty, \
+    Library
 import json
 from sqlalchemy import or_, and_
 
@@ -212,7 +213,7 @@ def timeStamp(timeNum):
         return time.strftime("%Y-%m-%d", timeArray)
 
 
- # ******************************* 图书管理 *******************************
+# ******************************* 图书管理 *******************************
 
 @main.route('/new_store', methods=['GET', 'POST'])
 @login_required
@@ -226,6 +227,12 @@ def new_store():
         Bbrief = data["Bbrief"]
         Bpress = data["Bpress"]
         Brank = int(data["Brank"])
+        Btype = data["Btype"]
+        Wno = data["Wno"]
+        Bshelf = data["Bshelf"]
+        Bnumber = data["Bnumber"]
+        Bdate = data["Bdate"]
+        Bnote = data["Bnote"]
         book = Book(Bno=Bno, Bname=Bname, Bauthor=Bauthor, Bbrief=Bbrief,
                     Bpress=Bpress, Brank=Brank, Btype=Btype, Wno=Wno, Bshelf=Bshelf, Bdate=Bdate, Bnote=Bnote,
                     Bnumber=Bnumber)
