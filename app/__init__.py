@@ -25,4 +25,5 @@ def create_app():
     # 附加路由
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
+
     return app

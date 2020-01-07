@@ -1,0 +1,164 @@
+{% extends 'main/base.html' %}
+{% block title %}书籍类别{% endblock %}
+
+{% block card %}
+    <div class="layui-card-header">
+        <h2>书籍类别</h2>
+    </div>
+{% endblock %}
+{% block body %}
+    <div>
+        <table class="layui-hide" id="test" lay-filter="test"></table>
+    </div>
+
+    <script type="text/html" id="toolbarDemo">
+        <div class="layui-btn-container">
+            <button class="layui-btn layui-btn-sm" lay-event="createType" id="createType">新建书类</button>
+        </div>
+    </script>
+    <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
+
+{% endblock %}
+{% block script %}
+
+    <script>
+        layui.use('table', function () {
+            var table = layui.table;
+            table.render({
+                elem: '#test'
+                , url: "{{ url_for('main.query_type') }}"
+                , toolbar: '#toolbarDemo'
+                , title: '图书类型'
+                , id: 'booktype'
+                , contentType: 'application/json'
+                , width: 400
+                , totalRow: true,
+                cols: [[
+                    {type: 'checkbox', fixed: 'left'}
+                    , {
+                        field: 'id',
+                        title: 'ID',
+                        width: 80,
+                        fixed: 'left',
+                        unresize: true,
+                        sort: true,
+                        totalRowText: '合计'
+                    }
+                    , {field: 'Btype', title: '图书类别', edit: 'text'}
+                    , {fixed: 'right', title: '操作', toolbar: '#barDemo'}
+                ]]
+            });
+            table.on('tool(test)', function (obj) {
+                var data = obj.data;
+                if (obj.event === 'del') {
+                    layer.confirm('确定删除', function (index) {
+                        console.log(obj.data);
+                        $.ajax({
+                            url: '{{ url_for('main.delete_type') }}',
+                            method: 'POST',
+                            async: false,
+                            data: {
+                                'Btype': data.type,
+                            },
+                            dataType: 'text',
+                            success: function (res) {
+                                if (res == 0) {
+                                    layer.msg(obj.data.type + "删除失败，请点击重试")
+                                } else if (res == 1) {
+                                    layer.msg(obj.data.type + "删除成功!");
+                                    layer.close(index);
+                                    table.reload("booktype", {
+                                        page: {
+                                            curr: 1 //重新从第 1 页开始
+                                        },
+                                        where: {
+                                            data: $('#searchContent').val()
+                                        }
+                                    }, 'data');
+                                }
+                            },
+                            error: function (data) {
+                            }
+                        });
+                    });
+                }
+            });
+            //工具栏事件
+            table.on('toolbar(test)', function (obj) {
+                var checkStatus = table.checkStatus(obj.config.id);
+                switch (obj.event) {
+                    case 'getCheckData':
+                        var data = checkStatus.data;
+                        layer.alert(JSON.stringify(data));
+                        break;
+                    case 'getCheckLength':
+                        var data = checkStatus.data;
+                        layer.msg('选中了：' + data.length + ' 个');
+                        break;
+                    case 'isAll':
+                        layer.msg(checkStatus.isAll ? '全选' : '未全选')
+                        break;
+                    case 'createType':
+                        layer.open({
+                            type: 2,
+                            title: "新增",
+                            area: ['auto', '25%'],
+                            btn: ['确定', '取消'],
+                            content: '{{ url_for('main.new_type') }}',
+                            yes: function (index, layero) {
+                                var body = top.layer.getChildFrame('body', index);
+                                var Btype = body.find('#Btype').val();
+                                if (!Btype) {
+                                    layer.msg("书库类型不能为空！");
+                                } else {
+                                    $.ajax({
+                                        url: '{{ url_for('main.new_type') }}',
+                                        method: 'POST',
+                                        async: false,
+                                        data: {
+                                            'Btype': Btype,
+                                        },
+                                        dataType: 'text',
+                                        success: function (res) {
+                                            if (res == 0) {
+                                                layer.msg("书库已存在！")
+                                            } else if (res == 1) {
+                                                layer.msg("创建成功！");
+                                                parent.layer.close(index);
+                                                table.reload("booktype", {
+                                                    where: {
+                                                        data: $('#searchContent').val()
+                                                    }
+                                                }, 'data');
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                        break;
+                }
+            });
+            table.on('edit(test)', function (obj) { //注：edit是固定事件名，test是table原始容器的属性 lay-filter="对应的值"
+                console.log(obj.data); //得到修改后的值
+                $.ajax({
+                    url: '{{ url_for('main.update_type') }}',
+                    method: 'POST',
+                    async: false,
+                    data: obj.data,
+                    dataType: 'text',
+                    success:function (res) {
+                        if(res==1){
+                            layer.msg("修改成功！");
+                        }else{
+                            layer.msg("修改失败！")
+                        }
+
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

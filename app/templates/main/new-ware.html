@@ -1,0 +1,29 @@
+{% extends 'main/create-base.html' %}
+{% block head %}
+
+{% endblock %}
+{% block body %}
+    <form class="layui-form" method="post" id="window">
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="font-size: medium">书库号</label>
+            <div class="layui-input-inline">
+                <input type="text" class="layui-input" style="width:60%" name="Wno" id="Wno" lay-verify="number">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="font-size: medium">书库容量：</label>
+            <div class="layui-input-inline">
+                <input type="text" class="layui-input" style="width:60%" name="Wspace" id="Wspace"lay-verify="number">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="font-size: medium" >书库类型：</label>
+            <div class="layui-input-inline">
+                <input type="text" class="layui-input" style="width:60%" name="Wtype" id="Wtype">
+            </div>
+        </div>
+    </form>
+{% endblock %}
+{% block script %}
+
+{% endblock %}

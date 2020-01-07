@@ -1,0 +1,56 @@
+{% extends 'main/base.html' %}
+{% block title %}书库管理
+
+{% endblock %}
+
+{% block card %}
+    <div class="layui-card-header">
+        <h2>书库管理</h2>
+    </div>
+
+{% endblock %}
+{% block body %}
+
+
+    <div>
+        <table class="layui-hide" id="test" lay-filter="test"></table>
+    </div>
+
+{% endblock %}
+{% block script %}
+    <script>
+        layui.use(['table', 'layer', 'form'], function () {
+            var table = layui.table;
+            table.render({
+                elem: '#test'
+                , id: 'listware'
+                , url: "{{ url_for('main.select_ware') }}"
+                , where: {
+                    data: "all"
+                }
+                , toolbar: '#toolbarDemo'
+                , title: '书库日志表'
+                , contentType: 'application/json'
+                , totalRow: true
+                , width: 600
+                , cols: [[
+                    {type: 'checkbox', fixed: 'left'}
+                    , {
+                        field: 'Wno',
+                        title: '书库号',
+                        fixed: 'left',
+                        unresize: true,
+                        sort: true,
+                        totalRowText: '合计'
+                    }
+                    , {field: 'Wspace', title: '书库容量', sort: true}
+                    , {field: 'Wtype', title: '书库类型', edit: 'text'}
+                    , {fixed: 'right', title: '操作', toolbar: '#barDemo'}
+                ]]
+                , page: true //是否显示分页
+                , limits: [3, 5, 10]
+                , limit: 5 //每页默认显示的数量
+            });
+        });
+    </script>
+{% endblock %}

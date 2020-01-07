@@ -7,72 +7,155 @@
     </div>
 {% endblock %}
 {% block body %}
-    <br />
+    <br/>
     <form class="layui-form" method="post">
-        {{ form.csrf_token }}
         <div class="layui-form-item">
             <label class="layui-form-label" style="font-size: medium">ISBN：</label>
-            <div class="layui-input-block">
-                {{ form.isbn(class="layui-input", style="width:40%") }}
+            <div class="layui-input-block" style="width:40%">
+                <input type="text" name="Bno" placeholder="国际标准书号" class="layui-input" lay-verify="required">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label" style="font-size: medium">书名：</label>
-            <div class="layui-input-block">
-                {{ form.book_name(class="layui-input", style="width:40%") }}
-            </div>
-        </div>
-        <div class="layui-form-item">
-            <label class="layui-form-label" style="font-size: medium">出版社：</label>
-            <div class="layui-input-block">
-                {{ form.press(class="layui-input", style="width:40%") }}
+            <div class="layui-input-block" style="width:40%">
+                <input type="text" name="Bname" placeholder="书名" class="layui-input" lay-verify="required">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label" style="font-size: medium">作者：</label>
-            <div class="layui-input-block">
-                {{ form.author(class="layui-input", style="width:40%") }}
-            </div>
-        </div>
-         <div class="layui-form-item">
-            <label class="layui-form-label" style="font-size: medium">类别：</label>
-            <div class="layui-input-block">
-                {{ form.class_name(class="layui-input", style="width:40%") }}
+            <div class="layui-input-block" style="width:40%">
+                <input type="text" name="Bauthor" placeholder="作者" class="layui-input" lay-verify="required">
             </div>
         </div>
         <div class="layui-form-item">
-            <label class="layui-form-label" style="font-size: medium">位置：</label>
-            <div class="layui-input-block">
-                {{ form.book_location(class="layui-input", style="width:40%") }}
+            <label class="layui-form-label" style="font-size: medium">简介：</label>
+            <div class="layui-input-block" style="width:40%">
+                <input type="text" name="Bbrief" placeholder="简介" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="font-size: medium">出版社：</label>
+            <div class="layui-input-block" style="width:40%">
+                <input type="text" name="Bpress" placeholder="出版社" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="font-size: medium">图书级别：</label>
+            <div class="layui-input-block" style="width:40%">
+                <select name="Brank" lay-filter="aihao">
+                    <option value="0" selected="">学生级别</option>
+                    <option value="1">职工级别</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="font-size: medium">图书类别：</label>
+            <div class="layui-input-block" style="width:40%">
+                <select name="Btype" lay-verify="required" lay-search="" id="Btype">
+                    <option value="">直接选择或搜索选择</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="font-size: medium">书库号：</label>
+            <div class="layui-input-block" style="width:40%">
+                <select name="Wno" lay-verify="required" lay-search="" id="Wno">
+                    <option value="">直接选择或搜索选择</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="font-size: medium">书架号：</label>
+            <div class="layui-input-block" style="width:40%">
+                <input type="text" name="Bshelf" placeholder="书架号" class="layui-input" lay-verify="required|number">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label" style="font-size: medium">馆藏数量：</label>
-            <div class="layui-input-block">
-                {{ form.store_count(class="layui-input", style="width:40%") }}
+            <div class="layui-input-block" style="width:40%">
+                <input type="text" name="Bnumber" placeholder="存入数量" class="layui-input" lay-verify="required|number">
             </div>
         </div>
-
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">入库时间：</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="Bdate" id="date" lay-verify="date" placeholder="yyyy-MM-dd"
+                           autocomplete="off"
+                           class="layui-input">
+                </div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="font-size: medium">备注：</label>
+            <div class="layui-input-block" style="width:40%">
+                <input type="text" name="Bnote" placeholder="备注" class="layui-input">
+            </div>
+        </div>
         <div class="layui-form-item">
             <div class="layui-input-block">
-                {{ form.submit(class="layui-btn", style="width:100px;font-size:medium") }}
+                <button type="submit" class="layui-btn" lay-submit="" lay-filter="submit">立即提交</button>
             </div>
         </div>
-
     </form>
 {% endblock %}
 {% block script %}
-<script type="text/javascript">
-    layui.use(['form','jquery'], function () {
-        var form = layui.form;
-        var $ = layui.$;
+    <script type="text/javascript">
+        layui.use(['form', 'jquery', 'laydate'], function () {
+            var form = layui.form
+                , laydate = layui.laydate;
+            //日期
+            laydate.render({
+                elem: '#date'
+            });
+            laydate.render({
+                elem: '#date1'
+            });
+            //书库号查询
+            $.ajax({
+                url: '{{ url_for('main.select_all_ware') }}',
+                dataType: 'json',
+                data: {'Wno': ''},	//所有书库
+                type: 'post',
+                success: function (data) {
+                    console.log(data);
+                    $.each(data.data, function (index, item) {
+                        console.log(item);
+                        $('#Wno').append(new Option(item.Wno+item.Wtype,item.Wno ));// 下拉菜单里添加元素
+                    });
+                    layui.form.render("select");
+                }
+            });
+            //书类查询
+            $.ajax({
+                url: '{{ url_for('main.query_all_type') }}',
+                dataType: 'json',
+                data: {'Btid': 'all'},	//查询状态为正常的所有机构类型
+                type: 'post',
+                success: function (data) {
+                    $.each(data.data, function (index, item) {
+                        $('#Btype').append(new Option(item.Btype, item.Btid));// 下拉菜单里添加元素
+                    });
+                    layui.form.render("select");
+                }
+            });
 
-    });
-    $(document).ready(function(){
-        $("#storage").on('click',function () {
-            window.location.href="{{ url_for('main.storage') }}";
-        })
-    });
-
-</script>
+            form.on('submit(submit)', function (data) {
+                $.ajax({
+                    url: '{{ url_for('main.new_store') }}',
+                    method: 'POST',
+                    async: false,
+                    data: $(data.from).serialize(),
+                    dataType: 'text',
+                    success: function (res) {
+                        if (res == 1) {
+                            layer.msg("创建成功！");
+                        } else {
+                            layer.msg("创建失败！");
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 {% endblock %}
