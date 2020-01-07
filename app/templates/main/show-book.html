@@ -23,13 +23,12 @@
                 <button class="layui-btn layui-btn-sm" lay-event="search">搜索</button>
             </div>
             <div class="layui-inline">
-                <button class="layui-btn layui-btn-sm" lay-event="createType" id="createType">新建书类</button>
+                <button class="layui-btn layui-btn-sm" lay-event="createType" id="createType">新建图书</button>
             </div>
         </div>
     </script>
     <script type="text/html" id="barDemo">
-        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
-        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">移入历史书库</a>
     </script>
 {% endblock %}
 {% block script %}
@@ -51,56 +50,57 @@
                     {type: 'checkbox', fixed: 'left'}
                     , {
                         field: 'Bno',
-                        title: '书库号',
+                        title: '书号',
                         fixed: 'left',
                         unresize: true,
                         sort: true,
                         totalRowText: '合计'
                     }
                     {#Bno = db.Column(db.CHAR(10), primary_key=True)#国际标准书号#}
-                    , {field: 'Bname', title: '书名', sort: true}
+                    , {field: 'Bname', title: '书名', edit: 'text'}
                     {#Bname = db.Column(db.String(64),nullable=False)#书名#}
-                    , {field: 'Bauhtor', title: '作者'}
+                    , {field: 'Bauthor', title: '作者', edit: 'text'}
                     {#Bauthor = db.Column(db.String(64),nullable=False)#作者#}
-                    , {field: 'Bbrief', title: '简介'}
+                    , {field: 'Bbrief', title: '简介', edit: 'text'}
                     {#Bbrief = db.Column(db.String(255))#简介#}
-                    , {field: 'Bpress', title: '出版社'}
+                    , {field: 'Bpress', title: '出版社', edit: 'text'}
                     {#Bpress = db.Column(db.String(64))#出版社#}
+                     ,{field: 'Brank', title: '图书级别', edit: 'text'}
                     {#Brank = db.Column(db.BOOLEAN,default=False)#图书级别 true 表示教职工级别 false 表示学生级别#}
-                    , {field: 'Btype', title: '图书类别'}
+                    , {field: 'Btype', title: '图书类别', edit: 'text'}
                     {#Btype = db.Column(db.SMALLINT,db.ForeignKey('BookType.Btid'))#图书类别#}
-                    , {field: 'Wno', title: '书库号'}
+                    , {field: 'Wno', title: '书库号', edit: 'text'}
                     {#Wno = db.Column(db.CHAR(10),db.ForeignKey('Warehouse.Wno'))#书库号#}
-                    , {field: 'Bshelf', title: '货架号'}
+                    , {field: 'Bshelf', title: '货架号', edit: 'text'}
                     {#Bshelf=db.Column(db.CHAR(10),nullable=False)#货架号#}
+                    {#, {field: 'Bnumber', title: '馆藏数量', edit: 'text'}#}
+                    {#Bshelf=db.Column(db.CHAR(10),nullable=False)#货架号#}
+                    , {field: 'Bdate', title: '入库时间'}
                     {#Bdate= db.Column(db.CHAR(16))#入库时间#}
+                    , {field: 'Bnote', title: '备注', edit: 'text'}
                     {#Bnote=db.Column(db.String(64))#备注#}
                     , {fixed: 'right', title: '操作', toolbar: '#barDemo'}
                 ]]
                 , page: true //是否显示分页
                 , limits: [10, 15, 20]
-                , limit: 10 //每页默认显示的数量
+                , limit: 20 //每页默认显示的数量
             });
             table.on('tool(test)', function (obj) {
                 var data = obj.data;
                 if (obj.event === 'del') {
-                    layer.confirm('确定删除', function (index) {
+                    layer.confirm('确定移入历史书库？', function (index) {
                         console.log(obj.data);
                         $.ajax({
-                            url: '{{ url_for('main.delete_ware') }}',
+                            url: '{{ url_for('main.delete_store') }}',
                             method: 'POST',
                             async: false,
-                            data: {
-                                'Wno': data.Wno,
-                                'Wspace': data.Wspace,
-                                'Wtype': data.Wtype,
-                            },
+                            data: {"Bno":data.Bno},
                             dataType: 'text',
                             success: function (res) {
                                 if (res == 0) {
-                                    layer.msg("删除失败，请点击重试")
+                                    layer.msg("移入失败，请点击重试")
                                 } else if (res == 1) {
-                                    layer.msg(obj.data.Wno + "号书库删除成功!");
+                                    layer.msg(obj.data.Bno + "号书籍移入成功!");
                                     layer.close(index);
                                     table.reload("listware", {
                                         page: {
@@ -116,65 +116,6 @@
                             }
                         });
 
-                    });
-                } else if (obj.event === 'edit') {
-                    var body;
-                    layer.open({
-                        type: 2,
-                        area: ['25%', '45%'],
-                        fixed: false, //不固定
-                        maxmin: true,
-                        content: '{{ url_for('main.update_ware') }}',
-                        btn: ['提交'],
-                        success: function (layero, index) {
-                            body = top.layer.getChildFrame('body', index);
-                            console.log(body);
-                            body.find('#Wno').val(obj.data.Wno).attr("disabled", true).attr("class", "layui-input layui-disabled");
-                            body.find('#Wspace').val(obj.data.Wspace);
-                            body.find('#Wtype').val(obj.data.Wtype);
-                        },
-                        yes: function (index, layero) {
-                            var Wno = parseInt(body.find('#Wno').val());
-                            var Wspace = parseInt(body.find('#Wspace').val());
-                            var Wtype = body.find('#Wtype').val();
-                            if (isNaN(Wno)) {
-                                layer.msg("书库号不符合格式或为空！");
-                            } else if (isNaN(Wspace)) {
-                                layer.msg("书库容量不符合格式或为空！");
-                            } else if (!Wtype) {
-                                layer.msg("书库类型不能为空！");
-                            } else {
-                                $.ajax({
-                                    url: '{{ url_for('main.update_ware') }}',
-                                    method: 'POST',
-                                    async: false,
-                                    data: {
-                                        'Wno': Wno,
-                                        'Wspace': Wspace,
-                                        'Wtype': Wtype,
-                                    },
-                                    dataType: 'text',
-                                    success: function (res) {
-                                        if (res == 0) {
-                                            layer.msg("更新失败，请重试！")
-                                        } else if (res == 1) {
-                                            layer.msg("更新成功！");
-                                            parent.layer.close(index);
-                                            table.reload("listware", {
-                                                page: {
-                                                    curr: 1 //重新从第 1 页开始
-                                                },
-                                                where: {
-                                                    data: $('#searchContent').val()
-                                                }
-                                            }, 'data');
-                                        }
-                                    },
-                                    error: function (data) {
-                                    }
-                                });
-                            }
-                        }
                     });
                 }
             });
@@ -193,65 +134,28 @@
                         break;
                     case 'createType':
                         window.location.href = "{{ url_for('main.new_store') }}";
-                    {#layer.open({#}
-                    {#    type: 2,#}
-                    {#    area: ['25%', '45%'],#}
-                    {#    fixed: false, //不固定#}
-                    {#    maxmin: true,#}
-                    {#    content: '{{ url_for('main.new_ware') }}',#}
-                    {#    btn: ['提交'],#}
-                    {#    yes: function (index, layero) {#}
-                    {#        var body = top.layer.getChildFrame('body', index);#}
-                    {#        var Wno = parseInt(body.find('#Wno').val());#}
-                    {#        var Wspace = parseInt(body.find('#Wspace').val());#}
-                    {#        var Wtype = body.find('#Wtype').val();#}
-                    {#        console.log(isNaN(Wno));#}
-                    {#        console.log(typeof Wno);#}
-                    {#        if (isNaN(Wno)) {#}
-                    {#            layer.msg("书库号不符合格式或为空！");#}
-                    {#        } else if (isNaN(Wspace)) {#}
-                    {#            layer.msg("书库容量不符合格式或为空！");#}
-                    {#        } else if (!Wtype) {#}
-                    {#            layer.msg("书库类型不能为空！");#}
-                    {#        } else {#}
-                    {#            $.ajax({#}
-                    {#                url: '{{ url_for('main.new_ware') }}',#}
-                    {#                method: 'POST',#}
-                    {#                async: false,#}
-                    {#                data: {#}
-                    {#                    'Wno': Wno,#}
-                    {#                    'Wspace': Wspace,#}
-                    {#                    'Wtype': Wtype,#}
-                    {#                },#}
-                    {#                dataType: 'text',#}
-                    {#                success: function (res) {#}
-                    {#                    if (res == 0) {#}
-                    {#                        layer.msg("书库已存在！")#}
-                    {#                    } else if (res == 1) {#}
-                    {#                        layer.msg("创建成功！");#}
-                    {#                        parent.layer.close(index);#}
-                    {#                        table.reload("listware", {#}
-                    {#                            page: {#}
-                    {#                                curr: 1 //重新从第 1 页开始#}
-                    {#                            },#}
-                    {#                            where: {#}
-                    {#                                data: $('#searchContent').val()#}
-                    {#                            }#}
-                    {#                        }, 'data');#}
-                    {#                    }#}
-                    {#                },#}
-                    {#                error: function (data) {#}
-                    {#                }#}
-                    {#            });#}
-                    {#        }#}
-                    {#    }#}
-                    {#});
-            #}
-            break;
-        }
-        })
-        ;
+                        break;
+                }
+            })
+            ;
+            table.on('edit(test)', function (obj) { //注：edit是固定事件名，test是table原始容器的属性 lay-filter="对应的值"
+                console.log(obj.data); //得到修改后的值
+                $.ajax({
+                    url: '{{ url_for('main.update_store') }}',
+                    method: 'POST',
+                    async: false,
+                    data: obj.data,
+                    dataType: 'text',
+                    success: function (res) {
+                        if (res == 1) {
+                            layer.msg("修改成功！");
+                        } else {
+                            layer.msg("修改失败！")
+                        }
 
+                    }
+                });
+            });
         })
         ;
 

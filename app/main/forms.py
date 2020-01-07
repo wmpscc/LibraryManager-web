@@ -1,11 +1,11 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, SelectField, PasswordField, RadioField
-from wtforms.validators import DataRequired, EqualTo, Length
-
+from wtforms import StringField, SubmitField, SelectField, PasswordField, RadioField,IntegerField,TextAreaField
+from wtforms.validators import DataRequired,NumberRange
+from ..models import BookType,Warehouse
 
 class Login(FlaskForm):
-    account = StringField(u'账号', validators=[DataRequired(), Length(6, 10)])
-    password = PasswordField(u'密码', validators=[DataRequired(), Length(5, 32)])
+    account = StringField(u'账号', validators=[DataRequired()])
+    password = PasswordField(u'密码', validators=[DataRequired()])
     choice = [('student', u"学生"), ('faculty', u"职工")]
     choose = RadioField(u'类别', choices=choice, validators=[DataRequired()], coerce=str)
     submit = SubmitField(u'登录')
