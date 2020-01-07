@@ -30,7 +30,14 @@ class SearchStudentForm(FlaskForm):
     submit = SubmitField('搜索')
 
 
+class SearchFacultyForm(FlaskForm):
+    card = StringField(validators=[DataRequired()])
+    submit = SubmitField('搜索')
+
+
 class BorrowForm(FlaskForm):
+    methods = [('student', '学生用户'), ('faculty', '职工用户')]
+    method = SelectField(choices=methods, validators=[DataRequired()], coerce=str)
     card = StringField(validators=[DataRequired()])
     book_name = StringField(validators=[DataRequired()])
     submit = SubmitField(u'搜索')

@@ -133,7 +133,7 @@
                     <dl class="layui-nav-child">
                         <dd><a href="{{ url_for('main.new_store') }}">图书入库</a></dd>
                         <dd><a href="{{ url_for('main.show_store') }}">图书查询</a></dd>
-                        <dd><a href="javascript:;">图书更新</a></dd>
+                        <dd><a href="{{ url_for('main.book_note') }}">图书日志</a></dd>
                     </dl>
                 </li>
                 <li class="layui-nav-item">
@@ -148,7 +148,7 @@
                     <a href="javascript:;">人员管理</a>
                     <dl class="layui-nav-child">
                         <dd><a href="{{ url_for('main.search_student') }}">学生信息管理</a></dd>
-                        <dd><a href="javascript:;">职工信息管理</a></dd>
+                        <dd><a href="{{ url_for('main.search_faculty') }}">职工信息管理</a></dd>
                         <dd><a href="javascript:;">管理员授权</a></dd>
                     </dl>
                 </li>

@@ -149,9 +149,9 @@
                     dataType: 'text',
                     success: function (res) {
                         if (res == 1) {
-                            layer.msg("创建成功！");
+                            layer.msg("创建成功！", {time: 800});
                         } else {
-                            layer.msg("创建失败！");
+                            layer.msg("创建失败！", {time: 800});
                         }
                     }
                 });

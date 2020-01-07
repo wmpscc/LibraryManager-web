@@ -2,7 +2,7 @@ from flask_login import UserMixin
 from sqlalchemy import CheckConstraint
 from flask import session
 from . import db, login_manager
-
+import datetime
 
 # 管理员表
 class Admin(db.Model):
@@ -119,6 +119,7 @@ class Book(db.Model):
     Bshelf = db.Column(db.CHAR(10), nullable=False)  # 货架号
     Bdate = db.Column(db.CHAR(16))  # 入库时间
     Bnote = db.Column(db.String(64))  # 备注
+    Balive = db.Column(db.Boolean, default=True)  # 是否显示
 
     warehouse = db.relationship('Warehouse', backref=db.backref('books'))
     booktype = db.relationship('BookType', backref=db.backref('books'))
@@ -154,7 +155,7 @@ class Inventory(db.Model):
         return '<Inventory %r>' % self.barcode
 
 
-# 借书记录表
+# 学生借书记录表
 class Query(db.Model):
     __tablename__ = 'Query'
 
@@ -168,7 +169,33 @@ class Query(db.Model):
     borrow_admin = db.Column(db.ForeignKey('Admin.Ano'))  # 借书操作员
     return_admin = db.Column(db.ForeignKey('Admin.Ano'), nullable=True)  # 还书操作员
 
-    book = db.relationship('Book', backref=db.backref('querys'))
+
+
+    def __init__(self, Qname, Bno, Midentifiter, Qbdate, Qvalidity):
+        self.Qname = Qname
+        self.Bno = Bno
+        self.Midentifiter = Midentifiter
+        self.Qbdate = Qbdate
+        self.Qvalidity = Qvalidity
+
+    def __repr__(self):
+        return '<Query %r>' % self.Qno
+
+
+# 职工借书记录表
+class Query_Faculty(db.Model):
+    __tablename__ = 'Query_Faculty'
+    Qno = db.Column(db.SMALLINT, primary_key=True, autoincrement=True)  # 序号
+    Qname = db.Column(db.ForeignKey('Faculty.Fno'), index=True)  # 用户号
+    Bno = db.Column(db.CHAR(13), db.ForeignKey('Book.Bno'), nullable=False)  # 书号
+    Midentifiter = db.Column(db.ForeignKey('Inventory.barcode'), index=True)  # 标识符 barcode
+    Qbdate = db.Column(db.CHAR(16), nullable=False)  # 借出日期
+    Qvalidity = db.Column(db.CHAR(16), nullable=False)  # 有效期
+    Qrdate = db.Column(db.CHAR(16), nullable=True)  # 归还日期
+    borrow_admin = db.Column(db.ForeignKey('Admin.Ano'))  # 借书操作员
+    return_admin = db.Column(db.ForeignKey('Admin.Ano'), nullable=True)  # 还书操作员
+
+
 
     def __init__(self, Qname, Bno, Midentifiter, Qbdate, Qvalidity):
         self.Qname = Qname
@@ -219,7 +246,7 @@ class Record(db.Model):
     __tablename__ = 'Record'
 
     Rno = db.Column(db.SMALLINT, primary_key=True, autoincrement=True)  # 序号
-    Rdate = db.Column(db.CHAR(16))  # 更新日期
+    Rdate = db.Column(db.CHAR(16),default=datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))  # 更新日期
     Bno = db.Column(db.CHAR(13), db.ForeignKey('Book.Bno'), nullable=False)  # 国际标准书号
     Ano = db.Column(db.SMALLINT, db.ForeignKey('Admin.Ano'), nullable=False)  # 管理员号
     Rnote = db.Column(db.String(255))  # 备注
@@ -244,7 +271,7 @@ class Library(db.Model):
     Lno = db.Column(db.SMALLINT, primary_key=True, autoincrement=True)  # 序号
     Ano = db.Column(db.SMALLINT, db.ForeignKey('Admin.Ano'), nullable=False)  # 管理员号
     Wno = db.Column(db.CHAR(10), db.ForeignKey('Warehouse.Wno'), nullable=False)  # 书库号
-    Ldate = db.Column(db.CHAR(16))  # 操作时间
+    Ldate = db.Column(db.CHAR(16),default=datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))  # 操作时间
     Lnote = db.Column(db.String(255))
 
     admin = db.relationship('Admin', backref=db.backref('libraries'))
@@ -259,22 +286,7 @@ class Library(db.Model):
         return '<Library %r>' % self.Lno
 
 
-# 唯一标记表
-class Mark(db.Model):
-    __tablename__ = 'Mark'
 
-    Mid = db.Column(db.BIGINT, primary_key=True, autoincrement=True)  # id
-    Bno = db.Column(db.CHAR(13), db.ForeignKey('Book.Bno'))  # 书号
-    Midentifiter = db.Column(db.CHAR(10), nullable=False)  # 标识符
-
-    book = db.relationship('Book', backref=db.backref('marks'))
-
-    def __init__(self, Bno, Midentifiter):
-        self.Bno = Bno
-        self.Midentifiter = Midentifiter
-
-    def __repr__(self):
-        return '<Mark %r>' % self.Mid
 
 
 @login_manager.user_loader
