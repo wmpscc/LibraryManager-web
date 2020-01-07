@@ -27,6 +27,8 @@ class Logon(FlaskForm):
 
 
 class SearchStudentForm(FlaskForm):
+    methods = [('student', '学生用户'), ('faculty', '职工用户')]
+    method = SelectField(choices=methods, validators=[DataRequired()], coerce=str)
     card = StringField(validators=[DataRequired()])
     submit = SubmitField('搜索')
 
@@ -44,8 +46,25 @@ class BorrowForm(FlaskForm):
     submit = SubmitField(u'搜索')
 
 
+class ReturnForm(FlaskForm):
+    methods = [('student', '学生用户'), ('faculty', '职工用户')]
+    method = SelectField(choices=methods, validators=[DataRequired()], coerce=str)
+    card = StringField(validators=[DataRequired()])
+    submit = SubmitField('搜索')
+
+
 class SearchBookForm(FlaskForm):
     methods = [('book_name', '书名'), ('author', '作者'), ('class_name', '类别'), ('isbn', 'ISBN')]
     method = SelectField(choices=methods, validators=[DataRequired()], coerce=str)
+    content = StringField(validators=[DataRequired()])
+    submit = SubmitField('搜索')
+
+
+class SearchQueryForm(FlaskForm):
+    methods = [('student', '学生用户'), ('faculty', '职工用户')]
+    method = SelectField(choices=methods, validators=[DataRequired()], coerce=str)
+    methods2 = [('book_name', '书名'), ('uid', '借阅卡号'), ('uname', '读者姓名')]
+    method2 = SelectField(choices=methods2, validators=[DataRequired()], coerce=str)
+
     content = StringField(validators=[DataRequired()])
     submit = SubmitField('搜索')

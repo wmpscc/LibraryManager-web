@@ -1,5 +1,6 @@
 from . import main
-from .forms import Login, Logon, SearchStudentForm, BorrowForm, SearchFacultyForm, SearchBookForm
+from .forms import Login, Logon, SearchStudentForm, BorrowForm, SearchFacultyForm, SearchBookForm, ReturnForm, \
+    SearchQueryForm
 from flask import flash, redirect, url_for, session, render_template, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 import time
@@ -15,8 +16,6 @@ from sqlalchemy import or_, and_
 @main.route('/', methods=['GET', 'POST'])
 def login():
     form = Login()
-
-    # session['account_type'] = None
     if form.validate_on_submit():
         if form.choose.data == 'student':
             print("student被执行")
@@ -27,6 +26,8 @@ def login():
                 session['account_type'] = form.choose.data
                 session['uid'] = form.account.data
                 print("login---->", user)
+                session['admin'] = False
+                session['admin_Ano'] = None
         elif form.choose.data == 'faculty':
             user = Faculty.query.filter_by(Fno=form.account.data, Fpassword=form.password.data).first()
             if user is not None:
@@ -52,7 +53,12 @@ def login():
         else:
             current_user.uid = form.account.data
             print('uid-->', current_user.uid)
-            return redirect(url_for('.index'))  # 登录成功
+            # 登录成功
+            print(session['admin'])
+            if session['admin'] == True:
+                return redirect(url_for('.index'))
+            else:
+                return redirect(url_for('.index_common'))
 
     return render_template('main/login.html', form=form)
 
@@ -110,7 +116,15 @@ def logout():
 @main.route('/index', methods=['GET', 'POST'])
 @login_required
 def index():
-    return render_template('main/index.html')
+    form = SearchBookForm()
+    return render_template('main/index.html', name=session.get('name'), form=form)
+
+
+@main.route('/index_common', methods=['GET', 'POST'])
+@login_required
+def index_common():
+    form = SearchBookForm()
+    return render_template('main/index-common.html', name=session.get('name'), form=form)
 
 
 @main.route('/user_info')
@@ -813,16 +827,22 @@ def find_faculty_book():
 def return_book():
     # if session['group'] == 'student':
     #     flash(u'您无权限操作！')
-    form = SearchStudentForm()
+    form = ReturnForm()
     return render_template('main/return.html', name=session.get('name'), form=form)
 
 
 @main.route('/in', methods=['GET', 'POST'])
 @login_required
 def bookin():
+    user_type = request.args.get('user_type')
     barcode = request.args.get('barcode')
     card = request.args.get('card')
-    query = Query.query.filter(Query.Midentifiter == barcode, Query.Qname == card, Query.Qrdate.is_(None)).first()
+    if user_type == 'student':
+        query = Query.query.filter(Query.Midentifiter == barcode, Query.Qname == card, Query.Qrdate.is_(None)).first()
+    else:
+        query = Query_Faculty.query.filter(Query_Faculty.Midentifiter == barcode, Query_Faculty.Qname == card,
+                                           Query_Faculty.Qrdate.is_(None)).first()
+
     today_date = date.today()
     today_str = today_date.strftime("%Y-%m-%d")
     today_stamp = time.mktime(time.strptime(today_str + ' 00:00:00', '%Y-%m-%d %H:%M:%S'))
@@ -849,18 +869,29 @@ def bookin():
 
 @main.route('/find_not_return_book', methods=['GET', 'POST'])
 def find_not_return_book():
-    stu = Student.query.filter_by(Sno=request.form.get('card')).first()
+    user_type = request.form.get('user_type')
+    if user_type == 'student':
+        user = Student.query.filter_by(Sno=request.form.get('card')).first()
+    else:
+        user = Faculty.query.filter_by(Fno=request.form.get('card')).first()
+
     today_date = date.today()
     today_str = today_date.strftime("%Y-%m-%d")
     today_stamp = time.mktime(time.strptime(today_str + ' 00:00:00', '%Y-%m-%d %H:%M:%S'))
-    if stu is None:
-        return jsonify([{'stu': 0}])  # 没找到
-    if int(stu.valid_date) < int(today_stamp) * 1000:
-        return jsonify([{'stu': 2}])  # 到期
+    if user is None:
+        return jsonify([{'user': 0}])  # 没找到
+    if int(user.valid_date) < int(today_stamp) * 1000:
+        return jsonify([{'user': 2}])  # 到期
 
-    books = db.session.query(Query).join(Inventory).join(Book).filter(Query.Qname == request.form.get('card'),
-                                                                      Query.Qrdate.is_(None)).with_entities(
-        Query.Midentifiter, Book.Bno, Book.Bname, Query.Qbdate, Query.Qvalidity).all()
+    if request.form.get('user_type') == 'student':
+        books = db.session.query(Query).join(Inventory).join(Book).filter(Query.Qname == request.form.get('card'),
+                                                                          Query.Qrdate.is_(None)).with_entities(
+            Query.Midentifiter, Book.Bno, Book.Bname, Query.Qbdate, Query.Qvalidity).all()
+    else:
+        books = db.session.query(Query_Faculty).join(Inventory).join(Book).filter(
+            Query_Faculty.Qname == request.form.get('card'),
+            Query_Faculty.Qrdate.is_(None)).with_entities(
+            Query_Faculty.Midentifiter, Book.Bno, Book.Bname, Query_Faculty.Qbdate, Query_Faculty.Qvalidity).all()
     data = []
     print('books len-->', len(books))
     for book in books:
@@ -869,6 +900,72 @@ def find_not_return_book():
         item = {'barcode': book.Midentifiter, 'isbn': book.Bno, 'book_name': book.Bname,
                 'start_date': start_date, 'due_date': due_date}
         data.append(item)
+    return jsonify(data)
+
+
+# ******************************* 借书记录查询 *******************************
+
+@main.route('/search_query', methods=['GET', 'POST'])
+@login_required
+def search_query():  # 这个函数里不再处理提交按钮，使用Ajax局部刷新
+    form = SearchQueryForm()
+    return render_template('main/search-query.html', name=session.get('name'), form=form)
+
+
+@main.route('/find_query', methods=['GET', 'POST'])
+@login_required
+def find_query():
+    user_type = request.form.get('method')
+    search_type = request.form.get('method2')
+    content = request.form.get('content')
+    if user_type == 'student':
+        uQuery = Query
+    else:
+        uQuery = Query_Faculty
+    if search_type == 'uid' and user_type == 'student':
+        query = db.session.query(uQuery).join(Student).join(Book).filter(uQuery.Qname == content).with_entities(
+            uQuery.Qno, uQuery.Qname, Student.Sname, uQuery.Midentifiter, Book.Bno, Book.Bname, uQuery.Qbdate,
+            uQuery.Qrdate, uQuery.Qvalidity
+        ).all()
+    elif search_type == 'uid' and user_type == 'faculty':
+        query = db.session.query(uQuery).join(Faculty).join(Book).filter(uQuery.Qname == content).with_entities(
+            uQuery.Qno, uQuery.Qname, Student.Sname, uQuery.Midentifiter, Book.Bno, Book.Bname, uQuery.Qbdate,
+            uQuery.Qrdate, uQuery.Qvalidity
+        ).all()
+    elif search_type == 'uname' and user_type == 'student':
+        query = db.session.query(uQuery).join(Student).join(Book).filter(Student.Sname == content).with_entities(
+            uQuery.Qno, uQuery.Qname, Student.Sname, uQuery.Midentifiter, Book.Bno, Book.Bname, uQuery.Qbdate,
+            uQuery.Qrdate, uQuery.Qvalidity
+        ).all()
+    elif search_type == 'uname' and user_type == 'faculty':
+        query = db.session.query(uQuery).join(Student).join(Book).filter(Student.Sname == content).with_entities(
+            uQuery.Qno, uQuery.Qname, Student.Sname, uQuery.Midentifiter, Book.Bno, Book.Bname, uQuery.Qbdate,
+            uQuery.Qrdate, uQuery.Qvalidity
+        ).all()
+    elif search_type == 'book_name' and user_type == 'student':
+        query = db.session.query(uQuery).join(Student).join(Book).filter(Book.Bname == content).with_entities(
+            uQuery.Qno, uQuery.Qname, Student.Sname, uQuery.Midentifiter, Book.Bno, Book.Bname, uQuery.Qbdate,
+            uQuery.Qrdate, uQuery.Qvalidity
+        ).all()
+    elif search_type == 'book_name' and user_type == 'faculty':
+        query = db.session.query(uQuery).join(Student).join(Book).filter(Book.Bname == content).with_entities(
+            uQuery.Qno, uQuery.Qname, Student.Sname, uQuery.Midentifiter, Book.Bno, Book.Bname, uQuery.Qbdate,
+            uQuery.Qrdate, uQuery.Qvalidity
+        ).all()
+    else:
+        query = None
+
+    data = []
+    print("query len -->", len(query))
+    if query is not None:
+        for que in query:
+            start_date = timeStamp(que.Qbdate)
+            due_date = timeStamp(que.Qvalidity)
+            return_date = timeStamp(que.Qrdate)
+            item = {'query_id': que.Qno, 'uid': que.Qname, 'uname': que.Sname, 'barcode': que.Midentifiter,
+                    'isbn': que.Bno, 'book_name': que.Bname,
+                    'start_date': start_date, 'return_date': return_date, 'due_date': due_date}
+            data.append(item)
     return jsonify(data)
 
 
@@ -898,7 +995,7 @@ def find_book():
     def find_book_location():
         return Book.query.filter(Book.Wno.contains(request.form.get('content'))).all()
 
-    def find_book_store_count(): # ???
+    def find_book_store_count():  # ???
         return Book.query.filter(Book.store_count.contains(request.form.get('content'))).all()
 
     methods = {
@@ -912,13 +1009,13 @@ def find_book():
     books = methods[request.form.get('method')]()
     data = []
     for book in books:
-        count = Inventory.query.filter_by(isbn=book.isbn).count()
-        available = Inventory.query.filter_by(isbn=book.isbn, status=True).count()
+        count = Inventory.query.filter_by(isbn=book.Bno).count()
+        available = Inventory.query.filter_by(isbn=book.Bno, status=True).count()
         # count = str(book.store_count)
         # available = str(int(book.store_count) - int(book.loan_count))
-        item = {'isbn': book.isbn, 'book_name': book.book_name, 'press': book.press, 'author': book.author,
-                'class_name': book.class_name, 'book_location': book.book_location, 'count': count,
+        item = {'isbn': book.Bno, 'book_name': book.Bname, 'press': book.Bpress, 'author': book.Bauthor,
+                'class_name': book.Btype, 'book_location': book.Wno, 'count': count,
                 'available': available}
-        if book.withdraw is False:
+        if book.Balive is True:
             data.append(item)
     return jsonify(data)
