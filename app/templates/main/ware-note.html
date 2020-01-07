@@ -1,11 +1,11 @@
 {% extends 'main/base.html' %}
-{% block title %}书库管理
+{% block title %}书库日志
 
 {% endblock %}
 
 {% block card %}
     <div class="layui-card-header">
-        <h2>书库管理</h2>
+        <h2>书库日志</h2>
     </div>
 
 {% endblock %}
@@ -15,7 +15,19 @@
     <div>
         <table class="layui-hide" id="test" lay-filter="test"></table>
     </div>
-
+     <script type="text/html" id="toolbarDemo">
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <div class="layui-input-block">
+                    <input type="text" name="title" lay-verify="title" autocomplete="off" placeholder="关键字搜索"
+                           class="layui-input" id="searchContent">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <button class="layui-btn layui-btn-sm" lay-event="search">搜索</button>
+            </div>
+        </div>
+     </script>
 {% endblock %}
 {% block script %}
     <script>
@@ -24,7 +36,7 @@
             table.render({
                 elem: '#test'
                 , id: 'listware'
-                , url: "{{ url_for('main.select_ware') }}"
+                , url: "{{ url_for('main.select_ware_note') }}"
                 , where: {
                     data: "all"
                 }
@@ -32,24 +44,39 @@
                 , title: '书库日志表'
                 , contentType: 'application/json'
                 , totalRow: true
-                , width: 600
+                , width: 700
                 , cols: [[
                     {type: 'checkbox', fixed: 'left'}
                     , {
-                        field: 'Wno',
-                        title: '书库号',
+                        field: 'Lno',
+                        title: 'ID号',
                         fixed: 'left',
                         unresize: true,
                         sort: true,
                         totalRowText: '合计'
                     }
-                    , {field: 'Wspace', title: '书库容量', sort: true}
-                    , {field: 'Wtype', title: '书库类型', edit: 'text'}
-                    , {fixed: 'right', title: '操作', toolbar: '#barDemo'}
+                    , {field: 'Wno', title: '书库号', sort: true}
+                    , {field: 'Ano', title: '管理员号', edit: 'text'}
+                    , {field: 'Ldate', title: '操作日期', edit: 'text'}
+                    , {field: 'Lnote', title: '备注', edit: 'text'}
                 ]]
                 , page: true //是否显示分页
                 , limits: [3, 5, 10]
                 , limit: 5 //每页默认显示的数量
+            });
+            table.on('toolbar(test)', function (obj) {
+                switch (obj.event) {
+                    case 'search':
+                        table.reload("listware", {
+                            page: {
+                                curr: 1 //重新从第 1 页开始
+                            },
+                            where: {
+                                data: $('#searchContent').val()
+                            }
+                        }, 'data');
+                        break;
+                }
             });
         });
     </script>
