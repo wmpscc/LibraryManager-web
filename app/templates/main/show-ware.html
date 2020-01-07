@@ -4,199 +4,130 @@
 {% endblock %}
 
 {% block card %}
-<div class="layui-card-header">
-    <h2>书库管理</h2>
-</div>
+    <div class="layui-card-header">
+        <h2>书库管理</h2>
+    </div>
 
 {% endblock %}
 {% block body %}
 
 
-<div>
-    <table class="layui-hide" id="test" lay-filter="test"></table>
-</div>
+    <div>
+        <table class="layui-hide" id="test" lay-filter="test"></table>
+    </div>
 
 
-<script type="text/html" id="toolbarDemo">
-    <div class="layui-form-item">
-        <div class="layui-inline">
-            <div class="layui-input-block">
-                <input type="text" name="title" lay-verify="title" autocomplete="off" placeholder="关键字搜索"
-                       class="layui-input" id="searchContent">
+    <script type="text/html" id="toolbarDemo">
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <div class="layui-input-block">
+                    <input type="text" name="title" lay-verify="title" autocomplete="off" placeholder="关键字搜索"
+                           class="layui-input" id="searchContent">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <button class="layui-btn layui-btn-sm" lay-event="search">搜索</button>
+            </div>
+            <div class="layui-inline">
+                <button class="layui-btn layui-btn-sm" lay-event="createType" id="createType">新建书类</button>
             </div>
         </div>
-        <div class="layui-inline">
-            <button class="layui-btn layui-btn-sm" lay-event="search">搜索</button>
-        </div>
-        <div class="layui-inline">
-            <button class="layui-btn layui-btn-sm" lay-event="createType" id="createType">新建书类</button>
-        </div>
-    </div>
-</script>
-<script type="text/html" id="barDemo">
-    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
-    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
-</script>
+    </script>
+    <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
 {% endblock %}
 {% block script %}
-<script>
-    layui.use(['table', 'layer', 'form'], function () {
-        var table = layui.table;
-        table.render({
-            elem: '#test'
-            , id: 'listware'
-            , url: "{{ url_for('main.select_ware') }}"
-            , where: {
-                data: "all"
-            }
-            , toolbar: '#toolbarDemo'
-            , title: '书库表'
-            , contentType: 'application/json'
-            , totalRow: true
-            , width: 600
-            , cols: [[
-                {type: 'checkbox', fixed: 'left'}
-                , {
-                    field: 'Wno',
-                    title: '书库号',
-                    fixed: 'left',
-                    unresize: true,
-                    sort: true,
-                    totalRowText: '合计'
+    <script>
+        layui.use(['table', 'layer', 'form'], function () {
+            var table = layui.table;
+            table.render({
+                elem: '#test'
+                , id: 'listware'
+                , url: "{{ url_for('main.select_ware') }}"
+                , where: {
+                    data: "all"
                 }
-                , {field: 'Wspace', title: '书库容量', sort: true}
-                , {field: 'Wtype', title: '书库类型', edit: 'text'}
-                , {fixed: 'right', title: '操作', toolbar: '#barDemo'}
-            ]]
-            , page: true //是否显示分页
-            , limits: [3, 5, 10]
-            , limit: 5 //每页默认显示的数量
-        });
-        table.on('tool(test)', function (obj) {
-            var data = obj.data;
-            if (obj.event === 'del') {
-                layer.confirm('确定删除', function (index) {
-                    console.log(obj.data);
-                    $.ajax({
-                        url: '{{ url_for('main.delete_ware') }}',
-                        method: 'POST',
-                        async: false,
-                        data: {
-                            'Wno': data.Wno,
-                            'Wspace': data.Wspace,
-                            'Wtype': data.Wtype,
-                        },
-                        dataType: 'text',
-                        success: function (res) {
-                            if (res == 0) {
-                                layer.msg("删除失败，请点击重试")
-                            } else if (res == 1) {
-                                layer.msg(obj.data.Wno + "号书库删除成功!");
-                                layer.close(index);
-                                table.reload("listware", {
-                                    page: {
-                                        curr: 1 //重新从第 1 页开始
-                                    },
-                                    where: {
-                                        data: $('#searchContent').val()
-                                    }
-                                }, 'data');
-                            }
-                        },
-                        error: function (data) {
-                        }
-                    });
-
-                });
-            } else if (obj.event === 'edit') {
-                var body;
-                layer.open({
-                    type: 2,
-                    area: ['25%', '45%'],
-                    fixed: false, //不固定
-                    maxmin: true,
-                    content: '{{ url_for('main.update_ware') }}',
-                    btn: ['提交'],
-                    success: function (layero, index) {
-                        body = top.layer.getChildFrame('body', index);
-                        console.log(body);
-                        body.find('#Wno').val(obj.data.Wno).attr("disabled", true).attr("class", "layui-input layui-disabled");
-                        body.find('#Wspace').val(obj.data.Wspace);
-                        body.find('#Wtype').val(obj.data.Wtype);
-                    },
-                    yes: function (index, layero) {
-                        var Wno = parseInt(body.find('#Wno').val());
-                        var Wspace = parseInt(body.find('#Wspace').val());
-                        var Wtype = body.find('#Wtype').val();
-                        if (isNaN(Wno)) {
-                            layer.msg("书库号不符合格式或为空！");
-                        } else if (isNaN(Wspace)) {
-                            layer.msg("书库容量不符合格式或为空！");
-                        } else if (!Wtype) {
-                            layer.msg("书库类型不能为空！");
-                        } else {
-                            $.ajax({
-                                url: '{{ url_for('main.update_ware') }}',
-                                method: 'POST',
-                                async: false,
-                                data: {
-                                    'Wno': Wno,
-                                    'Wspace': Wspace,
-                                    'Wtype': Wtype,
-                                },
-                                dataType: 'text',
-                                success: function (res) {
-                                    if (res == 0) {
-                                        layer.msg("更新失败，请重试！")
-                                    } else if (res == 1) {
-                                        layer.msg("更新成功！");
-                                        parent.layer.close(index);
-                                        table.reload("listware", {
-                                            page: {
-                                                curr: 1 //重新从第 1 页开始
-                                            },
-                                            where: {
-                                                data: $('#searchContent').val()
-                                            }
-                                        }, 'data');
-                                    }
-                                },
-                                error: function (data) {
-                                }
-                            });
-                        }
+                , toolbar: '#toolbarDemo'
+                , title: '书库表'
+                , contentType: 'application/json'
+                , totalRow: true
+                , width: 600
+                , cols: [[
+                    {type: 'checkbox', fixed: 'left'}
+                    , {
+                        field: 'Wno',
+                        title: '书库号',
+                        fixed: 'left',
+                        unresize: true,
+                        sort: true,
+                        totalRowText: '合计'
                     }
-                });
-            }
-        });
-        //工具栏事件
-        table.on('toolbar(test)', function (obj) {
-            switch (obj.event) {
-                case 'search':
-                    table.reload("listware", {
-                        page: {
-                            curr: 1 //重新从第 1 页开始
-                        },
-                        where: {
-                            data: $('#searchContent').val()
-                        }
-                    }, 'data');
-                    break;
-                case 'createType':
+                    , {field: 'Wspace', title: '书库容量', sort: true}
+                    , {field: 'Wtype', title: '书库类型', edit: 'text'}
+                    , {fixed: 'right', title: '操作', toolbar: '#barDemo'}
+                ]]
+                , page: true //是否显示分页
+                , limits: [3, 5, 10]
+                , limit: 5 //每页默认显示的数量
+            });
+            table.on('tool(test)', function (obj) {
+                var data = obj.data;
+                if (obj.event === 'del') {
+                    layer.confirm('确定删除', function (index) {
+                        console.log(obj.data);
+                        $.ajax({
+                            url: '{{ url_for('main.delete_ware') }}',
+                            method: 'POST',
+                            async: false,
+                            data: {
+                                'Wno': data.Wno,
+                                'Wspace': data.Wspace,
+                                'Wtype': data.Wtype,
+                            },
+                            dataType: 'text',
+                            success: function (res) {
+                                if (res == 0) {
+                                    layer.msg("删除失败，请点击重试")
+                                } else if (res == 1) {
+                                    layer.msg(obj.data.Wno + "号书库删除成功!");
+                                    layer.close(index);
+                                    table.reload("listware", {
+                                        page: {
+                                            curr: 1 //重新从第 1 页开始
+                                        },
+                                        where: {
+                                            data: $('#searchContent').val()
+                                        }
+                                    }, 'data');
+                                }
+                            },
+                            error: function (data) {
+                            }
+                        });
+
+                    });
+                } else if (obj.event === 'edit') {
+                    var body;
                     layer.open({
                         type: 2,
                         area: ['25%', '45%'],
                         fixed: false, //不固定
                         maxmin: true,
-                        content: '{{ url_for('main.new_ware') }}',
+                        content: '{{ url_for('main.update_ware') }}',
                         btn: ['提交'],
+                        success: function (layero,index) {
+                            body = top.layer.getChildFrame('body', index);
+                            console.log(body);
+                            body.find('#Wno').val(obj.data.Wno).attr("disabled", true).attr("class","layui-input layui-disabled" );
+                            body.find('#Wspace').val(obj.data.Wspace);
+                            body.find('#Wtype').val(obj.data.Wtype);
+                        },
                         yes: function (index, layero) {
-                            var body = top.layer.getChildFrame('body', index);
                             var Wno = parseInt(body.find('#Wno').val());
                             var Wspace = parseInt(body.find('#Wspace').val());
                             var Wtype = body.find('#Wtype').val();
-                            console.log(isNaN(Wno));
-                            console.log(typeof Wno);
                             if (isNaN(Wno)) {
                                 layer.msg("书库号不符合格式或为空！");
                             } else if (isNaN(Wspace)) {
@@ -205,7 +136,7 @@
                                 layer.msg("书库类型不能为空！");
                             } else {
                                 $.ajax({
-                                    url: '{{ url_for('main.new_ware') }}',
+                                    url: '{{ url_for('main.update_ware') }}',
                                     method: 'POST',
                                     async: false,
                                     data: {
@@ -216,9 +147,9 @@
                                     dataType: 'text',
                                     success: function (res) {
                                         if (res == 0) {
-                                            layer.msg("书库已存在！")
+                                            layer.msg("更新失败，请重试！")
                                         } else if (res == 1) {
-                                            layer.msg("创建成功！");
+                                            layer.msg("更新成功！");
                                             parent.layer.close(index);
                                             table.reload("listware", {
                                                 page: {
@@ -236,11 +167,80 @@
                             }
                         }
                     });
-                    break;
-            }
+                }
+            });
+            //工具栏事件
+            table.on('toolbar(test)', function (obj) {
+                switch (obj.event) {
+                    case 'search':
+                        table.reload("listware", {
+                            page: {
+                                curr: 1 //重新从第 1 页开始
+                            },
+                            where: {
+                                data: $('#searchContent').val()
+                            }
+                        }, 'data');
+                        break;
+                    case 'createType':
+                        layer.open({
+                            type: 2,
+                            area: ['25%', '45%'],
+                            fixed: false, //不固定
+                            maxmin: true,
+                            content: '{{ url_for('main.new_ware') }}',
+                            btn: ['提交'],
+                            yes: function (index, layero) {
+                                var body = top.layer.getChildFrame('body', index);
+                                var Wno = parseInt(body.find('#Wno').val());
+                                var Wspace = parseInt(body.find('#Wspace').val());
+                                var Wtype = body.find('#Wtype').val();
+                                console.log(isNaN(Wno));
+                                console.log(typeof Wno);
+                                if (isNaN(Wno)) {
+                                    layer.msg("书库号不符合格式或为空！");
+                                } else if (isNaN(Wspace)) {
+                                    layer.msg("书库容量不符合格式或为空！");
+                                } else if (!Wtype) {
+                                    layer.msg("书库类型不能为空！");
+                                } else {
+                                    $.ajax({
+                                        url: '{{ url_for('main.new_ware') }}',
+                                        method: 'POST',
+                                        async: false,
+                                        data: {
+                                            'Wno': Wno,
+                                            'Wspace': Wspace,
+                                            'Wtype': Wtype,
+                                        },
+                                        dataType: 'text',
+                                        success: function (res) {
+                                            if (res == 0) {
+                                                layer.msg("书库已存在！")
+                                            } else if (res == 1) {
+                                                layer.msg("创建成功！");
+                                                parent.layer.close(index);
+                                                table.reload("listware", {
+                                                    page: {
+                                                        curr: 1 //重新从第 1 页开始
+                                                    },
+                                                    where: {
+                                                        data: $('#searchContent').val()
+                                                    }
+                                                }, 'data');
+                                            }
+                                        },
+                                        error: function (data) {
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                        break;
+                }
+            });
+
         });
 
-    });
-
-</script>
+    </script>
 {% endblock %}

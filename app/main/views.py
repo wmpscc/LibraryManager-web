@@ -1,11 +1,11 @@
 from . import main
-from .forms import Login, Logon, SearchStudentForm, BorrowForm
+from .forms import Login, Logon,BorrowForm,SearchStudentForm
 from flask import flash, redirect, url_for, session, render_template, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 import time
-from datetime import datetime, date
+from datetime import date
 from .. import db
-from ..models import Admin, Student, Faculty, BookType, Warehouse, Book, Query, Record, Inventory
+from ..models import Admin, Student, Faculty, BookType, Warehouse, Book, Library,Record,Query,Inventory
 import json
 from sqlalchemy import or_, and_
 
@@ -111,7 +111,6 @@ def logout():
 def index():
     return render_template('main/index.html')
 
-
 @main.route('/user_info')
 @login_required
 def user_info():
@@ -179,12 +178,12 @@ def timeStamp(timeNum):
         print(time.strftime("%Y-%m-%d", timeArray))
         return time.strftime("%Y-%m-%d", timeArray)
 
-
 # ******************************* 图书管理 *******************************
 
 @main.route('/new_store', methods=['GET', 'POST'])
 @login_required
 def new_store():
+    print(request.form)
     if request.form:
         data = request.form
         Bno = data["Bno"]
@@ -200,22 +199,12 @@ def new_store():
         Bdate = data["Bdate"]
         Bnote = data["Bnote"]
         book = Book(Bno=Bno, Bname=Bname, Bauthor=Bauthor, Bbrief=Bbrief,
-                    Bpress=Bpress, Brank=Brank, Btype=Btype, Wno=Wno, Bshelf=Bshelf, Bdate=Bdate, Bnote=Bnote)
+                    Bpress=Bpress, Brank=Brank, Btype=Btype, Wno=Wno, Bshelf=Bshelf, Bdate=Bdate, Bnote=Bnote,
+                    Bnumber=Bnumber)
+        record=Record(Bno,1,"新建图书")
         db.session.add(book)
+        db.session.add(record)
         db.session.commit()
-
-        for i in range(int(Bnumber)):
-            inventory = Inventory()
-            inventory.barcode = str(book.Bno + '_' + str(i))[-6:]
-            inventory.isbn = book.Bno
-            today_date = date.today()
-            today_str = today_date.strftime("%Y-%m-%d")
-            today_stamp = time.mktime(time.strptime(today_str + ' 00:00:00', '%Y-%m-%d %H:%M:%S'))
-            inventory.storage_date = today_stamp
-            inventory.admin = session['admin_Ano']
-            db.session.add(inventory)
-        db.session.commit()
-
     return render_template('main/new-store.html', res=1)
 
 
@@ -230,7 +219,167 @@ def show_store():
 @main.route('/select_store', methods=['GET', 'POST'])
 @login_required
 def select_store():
-    return jsonify()
+    form = {
+        "code": 0
+        , "msg": ""
+        , "count": ""
+        , "data": []
+    }
+    page_limit = {}
+    for i in request.args.to_dict().keys():
+        page_limit = json.loads(i)
+    if page_limit['page'] and page_limit['page']:
+        page = page_limit['page']
+        limit = page_limit['limit']
+        data = page_limit['data']
+    else:
+        page = 1
+        limit = 20
+        data = ''
+    if data == "all" or data == "":
+        books = Book.query.filter_by(Balive=True)
+        form["count"] = Book.query.filter_by(Balive=True).count()
+        books = books.paginate(page=int(page), per_page=int(limit),
+                               error_out=True)
+    else:
+        booktype = BookType.query.filter(BookType.Balive == True, BookType.Btype == data).first()
+        if booktype:
+            books = Book.query.filter(Book.Balive == True,
+                                      or_(Book.Bno.like("%" + data + "%"),
+                                          Book.Bname.like("%" + data + "%"),
+                                          Book.Bauthor.like("%" + data + "%"),
+                                          Book.Bbrief.like("%" + data + "%"),
+                                          Book.Bpress.like("%" + data + "%"),
+                                          Book.Wno.like("%" + data + "%"),
+                                          Book.Bshelf.like("%" + data + "%"),
+                                          Book.Bdate.like("%" + data + "%"),
+                                          Book.Btype.like("%" + str(booktype.Btid) + "%"),
+                                          Book.Bnote.like("%" + data + "%")))
+        else:
+            books = Book.query.filter(Book.Balive == True,
+                                      or_(Book.Bno.like("%" + data + "%"),
+                                          Book.Bname.like("%" + data + "%"),
+                                          Book.Bauthor.like("%" + data + "%"),
+                                          Book.Bbrief.like("%" + data + "%"),
+                                          Book.Bpress.like("%" + data + "%"),
+                                          Book.Wno.like("%" + data + "%"),
+                                          Book.Bshelf.like("%" + data + "%"),
+                                          Book.Bdate.like("%" + data + "%"),
+                                          Book.Bnote.like("%" + data + "%")))
+        form["count"] = books.count()
+        books = books.paginate(page=int(page), per_page=int(limit), error_out=True)
+
+    for book in list(books.items):
+        form["data"].append({
+            "Bno": book.Bno,
+            "Bname": book.Bname,
+            "Bauthor": book.Bauthor,
+            "Bbrief": book.Bbrief,
+            "Bpress": book.Bpress,
+            "Brank": book.Brank,
+            "Btype": book.booktype.Btype,
+            "Wno": book.Wno,
+            "Bshelf": book.Bshelf,
+            "Bdate": book.Bdate,
+            "Bnote": book.Bnote
+        })
+    return jsonify(form)
+
+
+# 图书删除
+@main.route('/delete_store', methods=['GET', 'POST'])
+@login_required
+def delete_store():
+    print(request.form)
+    if request.form:
+        Book.query.filter(Book.Bno == request.form["Bno"]).update({"Balive": False})
+        record=Record(request.form["Bno"],1,"删除图书")
+        db.session.add(record)
+        db.session.commit()
+        return jsonify(1)
+    return jsonify(0)
+
+
+# 图书更新
+@main.route('/update_store', methods=['GET', 'POST'])
+@login_required
+def update_store():
+    if request.form:
+        data = request.form.to_dict()
+        Bno = data["Bno"]
+        Bname = data["Bname"]
+        Bauthor = data["Bauthor"]
+        Bbrief = data["Bbrief"]
+        Bpress = data["Bpress"]
+        Brank = data["Brank"]
+        data["Brank"] = 1 if data["Brank"] == 'true' else 0
+        Btype = data["Btype"]
+        print(Btype)
+        data["Btype"] = BookType.query.filter_by(Btype=Btype).first().Btid
+        Wno = data["Wno"]
+        Bshelf = data["Bshelf"]
+        # Bnumber = data["Bnumber"]
+        Bdate = data["Bdate"]
+        Bnote = data["Bnote"]
+        print(data)
+        ware = Book.query.filter(Book.Bno == Bno).update(data)
+        record=Record(Bno,1,"更新图书")
+        db.session.add(record)
+        db.session.commit()
+    return jsonify(1)
+
+
+# 书籍记录
+@main.route('/book_note', methods=['GET'])
+def book_note():
+    return render_template('main/book-note.html')
+
+
+# 查找图书记录
+@main.route('/select_book_note', methods=['POST', 'GET'])
+def select_book_note():
+    print("**********************************")
+    print(request.args.to_dict())
+    print(request.form)
+    page_limit = {}
+    for i in request.args.to_dict().keys():
+        page_limit = json.loads(i)
+    if page_limit['page'] and page_limit['page']:
+        page = page_limit['page']
+        limit = page_limit['limit']
+        data = page_limit['data']
+    else:
+        page = 1
+        limit = 10
+        data = ''
+    form = {
+        "code": 0
+        , "msg": ""
+        , "count": ""
+        , "data": []
+    }
+    if data == "all" or data == '':
+        records =Record.query.filter()
+        form["count"] = Record.query.filter().count()
+        records = records.paginate(page=int(page), per_page=int(limit),
+                                       error_out=True)
+    else:
+        records =Record.query.filter(or_(Library.Lnote.like("%" + data + "%"),
+                                             Library.Lno.like("%" + data + "%"),
+                                             Library.Wno.like("%" + data + "%"),
+                                             Library.Ano.like("%" + data + "%"),
+                                             Library.Ldate.like("%" + data + "%")))
+        form["count"] = records.count()
+        records = records.paginate(page=int(page), per_page=int(limit), error_out=True)
+    for record in list(records.items):
+        form["data"].append({
+            "Rno":  record.Rno,
+            "Ano":  record.Ano,
+            "Bno":  record.Bno,
+            "Rdate":  record.Rdate,
+            "Rnote":  record.Rnote
+        })
+    return jsonify(form)
 
 
 # ******************************* 书库管理 *******************************
@@ -238,6 +387,7 @@ def select_store():
 @main.route('/new_ware', methods=['GET', 'POST'])
 @login_required
 def new_ware():
+    print(request.form)
     if request.form:
         message = 0
         Wno = request.form['Wno']
@@ -247,7 +397,9 @@ def new_ware():
         if Warehouse.query.filter_by(Wno=Wno).first():
             return jsonify(message)
         ware = Warehouse(Wno, Wspace, Wtype)
+        library = Library(1, Wno, "新建书库")
         db.session.add(ware)
+        db.session.add(library)
         db.session.commit()
         message = 1
         return jsonify(message)
@@ -331,6 +483,8 @@ def update_ware():
         Wspace = data['Wspace']
         message = 0
         ware = Warehouse.query.filter(Warehouse.Wno == Wno).update({"Wtype": Wtype, "Wspace": Wspace})
+        library = Library(1, Wno, "更新书库")
+        db.session.add(library)
         db.session.commit()
         message = 1
         return jsonify(message)
@@ -348,16 +502,66 @@ def delete_ware():
     ware = Warehouse.query.filter(and_(Warehouse.Wno == Wno, Warehouse.Wtype == Wtype)).update({"Walive": False})
     print(ware)
     if ware:
+        library = Library(1, Wno, "删除书库")
+        db.session.add(library)
         db.session.commit()
         message = 1
     return jsonify(message)
 
 
 # 书库日志
-@main.route('/ware_note', methods=['GET', 'POST'])
+@main.route('/ware_note', methods=['GET'])
 @login_required
 def ware_note():
     return render_template('main/ware-note.html')
+
+
+# 书库搜索
+@main.route('/select_ware_note', methods=['GET', 'POST'])
+@login_required
+def select_ware_note():
+    print("**********************************")
+    print(request.args.to_dict())
+    print(request.form)
+    page_limit = {}
+    for i in request.args.to_dict().keys():
+        page_limit = json.loads(i)
+    if page_limit['page'] and page_limit['page']:
+        page = page_limit['page']
+        limit = page_limit['limit']
+        data = page_limit['data']
+    else:
+        page = 1
+        limit = 10
+        data = ''
+    form = {
+        "code": 0
+        , "msg": ""
+        , "count": ""
+        , "data": []
+    }
+    if data == "all" or data == '':
+        libraries = Library.query.filter()
+        form["count"] = Library.query.filter().count()
+        libraries = libraries.paginate(page=int(page), per_page=int(limit),
+                                       error_out=True)
+    else:
+        libraries = Library.query.filter(or_(Library.Lnote.like("%" + data + "%"),
+                                             Library.Lno.like("%" + data + "%"),
+                                             Library.Wno.like("%" + data + "%"),
+                                             Library.Ano.like("%" + data + "%"),
+                                             Library.Ldate.like("%" + data + "%")))
+        form["count"] = libraries.count()
+        libraries = libraries.paginate(page=int(page), per_page=int(limit), error_out=True)
+    for library in list(libraries.items):
+        form["data"].append({
+            "Lno": library.Lno,
+            "Ano": library.Ano,
+            "Wno": library.Wno,
+            "Ldate": library.Ldate,
+            "Lnote": library.Lnote
+        })
+    return jsonify(form)
 
 
 # ******************************* 书类管理 *******************************
@@ -401,6 +605,7 @@ def query_type():
             "Btype": ty.Btype
         })
     form["count"] = count
+    print(form)
     return jsonify(form)
 
 
@@ -427,6 +632,7 @@ def new_type():
 @login_required
 def delete_type():
     message = 0
+
     if request.form:
         Btype = request.form['Btype']
         type_one = BookType.query.filter(BookType.Btype == Btype).first()
@@ -448,7 +654,6 @@ def update_type():
         if booktype:
             return jsonify(1)
     return jsonify(0)
-
 
 # ******************************* 借书 *******************************
 
