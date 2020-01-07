@@ -1,5 +1,5 @@
 from . import main
-from .forms import Login, Logon, SearchStudentForm, BorrowForm, SearchFacultyForm
+from .forms import Login, Logon, SearchStudentForm, BorrowForm, SearchFacultyForm, SearchBookForm
 from flask import flash, redirect, url_for, session, render_template, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 import time
@@ -239,6 +239,18 @@ def new_store():
         record = Record(Bno, 1, "新建图书")
         db.session.add(book)
         db.session.add(record)
+        db.session.commit()
+
+        for i in range(int(Bnumber)):
+            inventory = Inventory()
+            inventory.barcode = str(book.Bno + '_' + str(i))[-6:]
+            inventory.isbn = book.Bno
+            today_date = date.today()
+            today_str = today_date.strftime("%Y-%m-%d")
+            today_stamp = time.mktime(time.strptime(today_str + ' 00:00:00', '%Y-%m-%d %H:%M:%S'))
+            inventory.storage_date = today_stamp
+            inventory.admin = session['admin_Ano']
+            db.session.add(inventory)
         db.session.commit()
     return render_template('main/new-store.html', res=1)
 
@@ -857,4 +869,56 @@ def find_not_return_book():
         item = {'barcode': book.Midentifiter, 'isbn': book.Bno, 'book_name': book.Bname,
                 'start_date': start_date, 'due_date': due_date}
         data.append(item)
+    return jsonify(data)
+
+
+# ******************************* 查找书籍 *******************************
+
+@main.route('/search_book', methods=['GET', 'POST'])
+@login_required
+def search_book():  # 这个函数里不再处理提交按钮，使用Ajax局部刷新
+    form = SearchBookForm()
+    return render_template('main/search-book.html', name=session.get('name'), form=form)
+
+
+@main.route('/books', methods=['POST'])
+def find_book():
+    def find_name():
+        return Book.query.filter(Book.Bname.like('%' + request.form.get('content') + '%')).all()
+
+    def find_author():
+        return Book.query.filter(Book.Bauthor.contains(request.form.get('content'))).all()
+
+    def find_class():
+        return Book.query.filter(Book.Btype.contains(request.form.get('content'))).all()
+
+    def find_isbn():
+        return Book.query.filter(Book.Bno.contains(request.form.get('content'))).all()
+
+    def find_book_location():
+        return Book.query.filter(Book.Wno.contains(request.form.get('content'))).all()
+
+    def find_book_store_count(): # ???
+        return Book.query.filter(Book.store_count.contains(request.form.get('content'))).all()
+
+    methods = {
+        'book_name': find_name,
+        'author': find_author,
+        'class_name': find_class,
+        'isbn': find_isbn,
+        'book_location': find_book_location,
+        'store_count': find_book_store_count
+    }
+    books = methods[request.form.get('method')]()
+    data = []
+    for book in books:
+        count = Inventory.query.filter_by(isbn=book.isbn).count()
+        available = Inventory.query.filter_by(isbn=book.isbn, status=True).count()
+        # count = str(book.store_count)
+        # available = str(int(book.store_count) - int(book.loan_count))
+        item = {'isbn': book.isbn, 'book_name': book.book_name, 'press': book.press, 'author': book.author,
+                'class_name': book.class_name, 'book_location': book.book_location, 'count': count,
+                'available': available}
+        if book.withdraw is False:
+            data.append(item)
     return jsonify(data)

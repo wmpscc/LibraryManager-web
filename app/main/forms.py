@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, SelectField, PasswordField, RadioField,IntegerField,TextAreaField
-from wtforms.validators import DataRequired,NumberRange
-from ..models import BookType,Warehouse
+from wtforms import StringField, SubmitField, SelectField, PasswordField, RadioField, IntegerField, TextAreaField
+from wtforms.validators import DataRequired, NumberRange
+from ..models import BookType, Warehouse
+
 
 class Login(FlaskForm):
     account = StringField(u'账号', validators=[DataRequired()])
@@ -41,3 +42,10 @@ class BorrowForm(FlaskForm):
     card = StringField(validators=[DataRequired()])
     book_name = StringField(validators=[DataRequired()])
     submit = SubmitField(u'搜索')
+
+
+class SearchBookForm(FlaskForm):
+    methods = [('book_name', '书名'), ('author', '作者'), ('class_name', '类别'), ('isbn', 'ISBN')]
+    method = SelectField(choices=methods, validators=[DataRequired()], coerce=str)
+    content = StringField(validators=[DataRequired()])
+    submit = SubmitField('搜索')

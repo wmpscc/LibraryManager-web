@@ -4,6 +4,7 @@ from flask import session
 from . import db, login_manager
 import datetime
 
+
 # 管理员表
 class Admin(db.Model):
     __tablename__ = 'Admin'
@@ -120,11 +121,12 @@ class Book(db.Model):
     Bdate = db.Column(db.CHAR(16))  # 入库时间
     Bnote = db.Column(db.String(64))  # 备注
     Balive = db.Column(db.Boolean, default=True)  # 是否显示
+    Bnumber = db.Column(db.CHAR(10), default='0')
 
     warehouse = db.relationship('Warehouse', backref=db.backref('books'))
     booktype = db.relationship('BookType', backref=db.backref('books'))
 
-    def __init__(self, Bno, Bname, Bauthor, Bbrief, Bpress, Brank, Btype, Wno, Bshelf, Bdate, Bnote):
+    def __init__(self, Bno, Bname, Bauthor, Bbrief, Bpress, Brank, Btype, Wno, Bshelf, Bdate, Bnote, Bnumber):
         self.Bno = Bno
         self.Bname = Bname
         self.Bauthor = Bauthor
@@ -136,6 +138,7 @@ class Book(db.Model):
         self.Bshelf = Bshelf
         self.Bdate = Bdate
         self.Bnote = Bnote
+        self.Bnumber = Bnumber
 
     def __repr__(self):
         return '<Book %r>' % self.Bno
@@ -169,8 +172,6 @@ class Query(db.Model):
     borrow_admin = db.Column(db.ForeignKey('Admin.Ano'))  # 借书操作员
     return_admin = db.Column(db.ForeignKey('Admin.Ano'), nullable=True)  # 还书操作员
 
-
-
     def __init__(self, Qname, Bno, Midentifiter, Qbdate, Qvalidity):
         self.Qname = Qname
         self.Bno = Bno
@@ -194,8 +195,6 @@ class Query_Faculty(db.Model):
     Qrdate = db.Column(db.CHAR(16), nullable=True)  # 归还日期
     borrow_admin = db.Column(db.ForeignKey('Admin.Ano'))  # 借书操作员
     return_admin = db.Column(db.ForeignKey('Admin.Ano'), nullable=True)  # 还书操作员
-
-
 
     def __init__(self, Qname, Bno, Midentifiter, Qbdate, Qvalidity):
         self.Qname = Qname
@@ -246,7 +245,7 @@ class Record(db.Model):
     __tablename__ = 'Record'
 
     Rno = db.Column(db.SMALLINT, primary_key=True, autoincrement=True)  # 序号
-    Rdate = db.Column(db.CHAR(16),default=datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))  # 更新日期
+    Rdate = db.Column(db.CHAR(16), default=datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))  # 更新日期
     Bno = db.Column(db.CHAR(13), db.ForeignKey('Book.Bno'), nullable=False)  # 国际标准书号
     Ano = db.Column(db.SMALLINT, db.ForeignKey('Admin.Ano'), nullable=False)  # 管理员号
     Rnote = db.Column(db.String(255))  # 备注
@@ -254,8 +253,7 @@ class Record(db.Model):
     book = db.relationship('Book', backref=db.backref('records'))
     admin = db.relationship('Admin', backref=db.backref('records'))
 
-    def __init__(self, Rdate, Bno, Ano, Rnote):
-        self.Rdate = Rdate
+    def __init__(self, Bno, Ano, Rnote):
         self.Bno = Bno
         self.Ano = Ano
         self.Rnote = Rnote
@@ -271,7 +269,7 @@ class Library(db.Model):
     Lno = db.Column(db.SMALLINT, primary_key=True, autoincrement=True)  # 序号
     Ano = db.Column(db.SMALLINT, db.ForeignKey('Admin.Ano'), nullable=False)  # 管理员号
     Wno = db.Column(db.CHAR(10), db.ForeignKey('Warehouse.Wno'), nullable=False)  # 书库号
-    Ldate = db.Column(db.CHAR(16),default=datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))  # 操作时间
+    Ldate = db.Column(db.CHAR(16), default=datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))  # 操作时间
     Lnote = db.Column(db.String(255))
 
     admin = db.relationship('Admin', backref=db.backref('libraries'))
@@ -284,9 +282,6 @@ class Library(db.Model):
 
     def __repr__(self):
         return '<Library %r>' % self.Lno
-
-
-
 
 
 @login_manager.user_loader
