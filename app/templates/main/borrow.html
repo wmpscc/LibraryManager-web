@@ -7,8 +7,11 @@
 <form class="layui-form" method="post" id="searchForm">
     <!--{{ form.csrf_token }}-->
     <div class="layui-form-item">
-        <div class="layui-inline">
-            <label style="font-size: medium;width: 150px;" class="layui-form-label">学生借阅卡号码：</label>
+        <div class="layui-row layui-col-space10">
+            <div class="layui-col-md4", style="width: 200px;">
+                {{ form.method(class="layui-input-inline") }}
+            </div>
+            <label style="font-size: medium;width: 150px;" class="layui-form-label">借阅卡号码：</label>
             <div class="layui-input-inline">
                 {{ form.card(class="layui-input", id="card") }}
             </div>
@@ -57,7 +60,7 @@
             var data = obj.data; //获得当前行数据
             var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
             //var tr = obj.tr; //获得当前行 tr 的DOM对象
-            console.log(obj);
+            {#console.log(obj);#}
             if (layEvent === 'borr') {
                 layer.confirm('确认借出吗？', function (index) {
                     //obj.del(); //删除对应行（tr）的DOM结构，并更新缓存
@@ -68,7 +71,8 @@
                             'barcode': data.barcode,
                             'card': $('#card').val(),
                             'isbn': data.isbn,
-                            'book_name': $('#book_name').val()
+                            'book_name': $('#book_name').val(),
+                            'user_type': $('#method').val()
                         }
                     });
                     layer.close(index);
@@ -86,64 +90,127 @@
                         layer.msg('请填写查询内容', {time: 800});
                     });
                 } else {
-                    $.ajax({
-                        url: "{{ url_for('main.find_stu_book') }}",
-                        type: "post",
-                        data: form,
-                        processData: false,
-                        contentType: false,
-                        success: function (data) {
-                            if (data.length !== 0) {
-                                if (data[0].stu === 0) {
-                                    layui.use('layer', function () {
-                                        var layer = layui.layer;
+                    if ($('#method').val() == 'student') {   // 选择了学生
+                        $.ajax({
+                            url: "{{ url_for('main.find_stu_book') }}",
+                            type: "post",
+                            data: form,
+                            processData: false,
+                            contentType: false,
+                            success: function (data) {
+                                if (data.length !== 0) {
+                                    if (data[0].stu === 0) {
+                                        layui.use('layer', function () {
+                                            var layer = layui.layer;
 
-                                        layer.msg('请输入正确卡号！', {time: 1000});
-                                    });
-                                } else if (data[0].stu === 2) {
-                                    layui.use('layer', function () {
-                                        var layer = layui.layer;
+                                            layer.msg('请输入正确卡号！', {time: 1000});
+                                        });
+                                    } else if (data[0].stu === 2) {
+                                        layui.use('layer', function () {
+                                            var layer = layui.layer;
 
-                                        layer.msg('该借阅卡已到期！', {time: 1000});
-                                    });
+                                            layer.msg('该借阅卡已到期！', {time: 1000});
+                                        });
+                                    } else {
+                                        $('#remove').remove();
+                                        table.render({
+                                            elem: '#test'
+                                            , data: data
+                                            , cols: [[
+                                                {field: 'barcode', title: '图书编号', width: 160}
+                                                , {field: 'isbn', title: 'ISBN', width: 180}
+                                                , {field: 'book_name', title: '书名', width: 240}
+                                                , {field: 'author', title: '作者', width: 140}
+                                                , {field: 'press', title: '出版社', width: 200}
+                                                , {title: '操作', fixed: 'right', align: 'center', toolbar: '#barDemo'}
+                                            ]]
+                                            , page: true
+                                            , height: 380
+                                            , limit: 7
+                                            , response: {
+                                                statusCode: 200
+                                            }
+                                            , parseData: function (data) {
+                                                return {
+                                                    "code": 200,
+                                                    "msg": data.message,
+                                                    "count": data.length,
+                                                    "data": data
+                                                };
+                                            }
+                                        });
+                                    }
                                 } else {
-                                    $('#remove').remove();
-                                    table.render({
-                                        elem: '#test'
-                                        , data: data
-                                        , cols: [[
-                                            {field: 'barcode', title: '图书编号', width: 160}
-                                            , {field: 'isbn', title: 'ISBN', width: 180}
-                                            , {field: 'book_name', title: '书名', width: 240}
-                                            , {field: 'author', title: '作者', width: 140}
-                                            , {field: 'press', title: '出版社', width: 200}
-                                            , {title: '操作', fixed: 'right', align: 'center', toolbar: '#barDemo'}
-                                        ]]
-                                        , page: true
-                                        , height: 380
-                                        , limit: 7
-                                        , response: {
-                                            statusCode: 200
-                                        }
-                                        , parseData: function (data) {
-                                            return {
-                                                "code": 200,
-                                                "msg": data.message,
-                                                "count": data.length,
-                                                "data": data
-                                            };
-                                        }
+                                    layui.use('layer', function () {
+                                        var layer = layui.layer;
+
+                                        layer.msg('找不到该图书！', {time: 1000});
                                     });
                                 }
-                            } else {
-                                layui.use('layer', function () {
-                                    var layer = layui.layer;
-
-                                    layer.msg('找不到该图书！', {time: 1000});
-                                });
                             }
-                        }
-                    });
+                        });
+                    } else {   // 选择了职工
+                        $.ajax({
+                            url: "{{ url_for('main.find_faculty_book') }}",
+                            type: "post",
+                            data: form,
+                            processData: false,
+                            contentType: false,
+                            success: function (data) {
+                                if (data.length !== 0) {
+                                    if (data[0].faculty === 0) {
+                                        layui.use('layer', function () {
+                                            var layer = layui.layer;
+
+                                            layer.msg('请输入正确卡号！', {time: 1000});
+                                        });
+                                    } else if (data[0].faculty === 2) {
+                                        layui.use('layer', function () {
+                                            var layer = layui.layer;
+
+                                            layer.msg('该借阅卡已到期！', {time: 1000});
+                                        });
+                                    } else {
+                                        $('#remove').remove();
+                                        table.render({
+                                            elem: '#test'
+                                            , data: data
+                                            , cols: [[
+                                                {field: 'barcode', title: '图书编号', width: 160}
+                                                , {field: 'isbn', title: 'ISBN', width: 180}
+                                                , {field: 'book_name', title: '书名', width: 240}
+                                                , {field: 'author', title: '作者', width: 140}
+                                                , {field: 'press', title: '出版社', width: 200}
+                                                , {title: '操作', fixed: 'right', align: 'center', toolbar: '#barDemo'}
+                                            ]]
+                                            , page: true
+                                            , height: 380
+                                            , limit: 7
+                                            , response: {
+                                                statusCode: 200
+                                            }
+                                            , parseData: function (data) {
+                                                return {
+                                                    "code": 200,
+                                                    "msg": data.message,
+                                                    "count": data.length,
+                                                    "data": data
+                                                };
+                                            }
+                                        });
+                                    }
+                                } else {
+                                    layui.use('layer', function () {
+                                        var layer = layui.layer;
+
+                                        layer.msg('找不到该图书！', {time: 1000});
+                                    });
+                                }
+                            }
+                        });
+
+                    }
+
 
                 }
                 return false;

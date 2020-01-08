@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, SelectField, PasswordField, RadioField,IntegerField,TextAreaField
-from wtforms.validators import DataRequired,NumberRange
-from ..models import BookType,Warehouse
+from wtforms import StringField, SubmitField, SelectField, PasswordField, RadioField, IntegerField, TextAreaField
+from wtforms.validators import DataRequired, NumberRange
+from ..models import BookType, Warehouse
+
 
 class Login(FlaskForm):
     account = StringField(u'账号', validators=[DataRequired()])
@@ -26,11 +27,44 @@ class Logon(FlaskForm):
 
 
 class SearchStudentForm(FlaskForm):
+    methods = [('student', '学生用户'), ('faculty', '职工用户')]
+    method = SelectField(choices=methods, validators=[DataRequired()], coerce=str)
+    card = StringField(validators=[DataRequired()])
+    submit = SubmitField('搜索')
+
+
+class SearchFacultyForm(FlaskForm):
     card = StringField(validators=[DataRequired()])
     submit = SubmitField('搜索')
 
 
 class BorrowForm(FlaskForm):
+    methods = [('student', '学生用户'), ('faculty', '职工用户')]
+    method = SelectField(choices=methods, validators=[DataRequired()], coerce=str)
     card = StringField(validators=[DataRequired()])
     book_name = StringField(validators=[DataRequired()])
     submit = SubmitField(u'搜索')
+
+
+class ReturnForm(FlaskForm):
+    methods = [('student', '学生用户'), ('faculty', '职工用户')]
+    method = SelectField(choices=methods, validators=[DataRequired()], coerce=str)
+    card = StringField(validators=[DataRequired()])
+    submit = SubmitField('搜索')
+
+
+class SearchBookForm(FlaskForm):
+    methods = [('book_name', '书名'), ('author', '作者'), ('class_name', '类别'), ('isbn', 'ISBN')]
+    method = SelectField(choices=methods, validators=[DataRequired()], coerce=str)
+    content = StringField(validators=[DataRequired()])
+    submit = SubmitField('搜索')
+
+
+class SearchQueryForm(FlaskForm):
+    methods = [('student', '学生用户'), ('faculty', '职工用户')]
+    method = SelectField(choices=methods, validators=[DataRequired()], coerce=str)
+    methods2 = [('book_name', '书名'), ('uid', '借阅卡号'), ('uname', '读者姓名')]
+    method2 = SelectField(choices=methods2, validators=[DataRequired()], coerce=str)
+
+    content = StringField(validators=[DataRequired()])
+    submit = SubmitField('搜索')

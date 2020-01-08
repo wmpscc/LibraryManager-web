@@ -54,7 +54,7 @@
                 var data = obj.data;
                 if (obj.event === 'del') {
                     layer.confirm('确定删除', function (index) {
-                        console.log(obj.data);
+                        {#console.log(obj.data);#}
                         $.ajax({
                             url: '{{ url_for('main.delete_type') }}',
                             method: 'POST',

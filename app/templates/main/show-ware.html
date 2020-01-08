@@ -29,7 +29,7 @@
                 <button class="layui-btn layui-btn-sm" lay-event="search">搜索</button>
             </div>
             <div class="layui-inline">
-                <button class="layui-btn layui-btn-sm" lay-event="createType" id="createType">新建书类</button>
+                <button class="layui-btn layui-btn-sm" lay-event="createType" id="createType">新建书库</button>
             </div>
         </div>
     </script>
@@ -53,7 +53,7 @@
                 , title: '书库表'
                 , contentType: 'application/json'
                 , totalRow: true
-                , width: 600
+                , width: '800'
                 , cols: [[
                     {type: 'checkbox', fixed: 'left'}
                     , {
@@ -76,7 +76,7 @@
                 var data = obj.data;
                 if (obj.event === 'del') {
                     layer.confirm('确定删除', function (index) {
-                        console.log(obj.data);
+                        {#console.log(obj.data);#}
                         $.ajax({
                             url: '{{ url_for('main.delete_ware') }}',
                             method: 'POST',
@@ -119,7 +119,7 @@
                         btn: ['提交'],
                         success: function (layero,index) {
                             body = top.layer.getChildFrame('body', index);
-                            console.log(body);
+                            {#console.log(body);#}
                             body.find('#Wno').val(obj.data.Wno).attr("disabled", true).attr("class","layui-input layui-disabled" );
                             body.find('#Wspace').val(obj.data.Wspace);
                             body.find('#Wtype').val(obj.data.Wtype);
@@ -195,8 +195,8 @@
                                 var Wno = parseInt(body.find('#Wno').val());
                                 var Wspace = parseInt(body.find('#Wspace').val());
                                 var Wtype = body.find('#Wtype').val();
-                                console.log(isNaN(Wno));
-                                console.log(typeof Wno);
+                                {#console.log(isNaN(Wno));#}
+                                {#console.log(typeof Wno);#}
                                 if (isNaN(Wno)) {
                                     layer.msg("书库号不符合格式或为空！");
                                 } else if (isNaN(Wspace)) {

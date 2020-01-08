@@ -1,0 +1,154 @@
+{% extends 'main/base.html' %}
+{% block title %}管理员授权{% endblock %}
+
+{% block card %}
+    <div class="layui-card-header">
+        <h2>管理员授权</h2>
+    </div>
+{% endblock %}
+{% block body %}
+    <div>
+        <table class="layui-hide" id="test" lay-filter="test"></table>
+    </div>
+    <script type="text/html" id="toolbarDemo">
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <div class="layui-input-block">
+                    <input type="text" name="title" lay-verify="title" autocomplete="off" placeholder="关键字搜索"
+                           class="layui-input" id="searchContent">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <button class="layui-btn layui-btn-sm" lay-event="search">搜索</button>
+            </div>
+        </div>
+    </script>
+    <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">授权</a>
+        <a class="layui-btn layui-btn-xs" lay-event="edit">取消</a>
+    </script>
+{% endblock %}
+{% block script %}
+    <script>
+        layui.use(['table', 'layer', 'form'], function () {
+            var table = layui.table;
+            table.render({
+                elem: '#test'
+                , id: 'listware'
+                , url: "{{ url_for('main.select_faculty') }}"
+                , where: {
+                    data: "all"
+                }
+                , toolbar: '#toolbarDemo'
+                , title: '书库表'
+                , contentType: 'application/json'
+                , totalRow: true
+                , cols: [[
+                    {type: 'checkbox', fixed: 'left'}
+                    , {
+                        field: 'Fno',
+                        title: '教职工号',
+                        fixed: 'left',
+                        unresize: true,
+                        sort: true,
+                        totalRowText: '合计'
+                    }
+                    , {field: 'Fname', title: '姓名'}
+                    , {field: 'Fsex', title: '性别'}
+                    , {field: 'Fdept', title: '系别'}
+                    , {field: 'Fdegree', title: '学历'}
+                    , {field: 'Ftitle', title: '职称'}
+                    , {field: 'Fis_work', title: '在职'}
+                    , {field: 'Ftel', title: '联系电话'}
+                    , {field: 'enroll_date', title: '注册日期'}
+                    , {field: 'is_success', title: '管理员'}
+                    ,{field:'right',title:'操作',toolbar:'#barDemo' }
+                ]]
+                , page: true //是否显示分页
+                , limits: [10, 15, 20]
+                , limit: 20 //每页默认显示的数量
+            });
+
+            table.on('tool(test)', function (obj) {
+                var data = obj.data;
+                if (obj.event === 'del') {
+                    layer.confirm('确定授权？', function (index) {
+                        {#console.log(obj.data);#}
+                        $.ajax({
+                            url: '{{ url_for('main.add_admin') }}',
+                            method: 'POST',
+                            async: false,
+                            data: {"Fno": data.Fno},
+                            dataType: 'text',
+                            success: function (res) {
+                                if (res == 0) {
+                                    layer.msg("管理员已存在，授权失败！");
+                                } else if (res == 1) {
+                                    layer.msg(obj.data.Fno + "号管理员授权成功!");
+                                    layer.close(index);
+                                    table.reload("listware", {
+                                        page: {
+                                            curr: 1 //重新从第 1 页开始
+                                        },
+                                        where: {
+                                            data: $('#searchContent').val()
+                                        }
+                                    }, 'data');
+                                }
+                            },
+                            error: function (data) {
+                            }
+                        });
+                    });
+                } else if (obj.event === 'edit') {
+                    layer.confirm('确定取消授权？', function (index) {
+                        {#console.log(obj.data);#}
+                        $.ajax({
+                            url: '{{ url_for('main.delete_admin') }}',
+                            method: 'POST',
+                            async: false,
+                            data: {"Fno": data.Fno},
+                            dataType: 'text',
+                            success: function (res) {
+                                if (res == 0) {
+                                    layer.msg("该用户没有管理员权限！")
+                                } else if (res == 1) {
+                                    layer.msg(obj.data.Fno + "号职工取消成功!");
+                                    layer.close(index);
+                                    table.reload("listware", {
+                                        page: {
+                                            curr: 1 //重新从第 1 页开始
+                                        },
+                                        where: {
+                                            data: $('#searchContent').val()
+                                        }
+                                    }, 'data');
+                                }
+                            },
+                            error: function (data) {
+                            }
+                        });
+                    });
+                }
+            });
+            //工具栏事件
+            table.on('toolbar(test)', function (obj) {
+                switch (obj.event) {
+                    case 'search':
+                        table.reload("listware", {
+                            page: {
+                                curr: 1 //重新从第 1 页开始
+                            },
+                            where: {
+                                data: $('#searchContent').val()
+                            }
+                        }, 'data');
+                        break;
+                }
+            })
+            ;
+        })
+        ;
+
+    </script>
+{% endblock %}

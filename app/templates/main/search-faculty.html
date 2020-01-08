@@ -1,8 +1,8 @@
 {% extends "main/base.html" %}
-{% block title %}查询学生信息{% endblock %}
+{% block title %}查询职工信息{% endblock %}
 
 {% block card %}
-<div class="layui-card-header"><h2>查询学生信息</h2></div>{% endblock %}
+<div class="layui-card-header"><h2>查询职工信息</h2></div>{% endblock %}
 {% block body %}
 <form class="layui-form" method="post" id="searchForm">
     <!--{{ form.csrf_token }}-->
@@ -10,7 +10,7 @@
         <div class="layui-inline">
             <div class="layui-row layui-col-space10">
                 <div class="layui-col-md4">
-                    <label style="font-size: medium;width: 180px;" class="layui-form-label">请输入学生借阅卡号码：</label>
+                    <label style="font-size: medium;width: 180px;" class="layui-form-label">请输入职工借阅卡号码：</label>
                 </div>
                 <div class="layui-col-md5">
                     <div class="layui-input-inline">
@@ -34,11 +34,11 @@
         <span style="margin-left: 140px;">电话：<span id="tel"></span></span>
         <span style="margin-left: 140px;">邮箱：<span id="email"></span></span>
 
-
     </p>
-    <p></p>
     <p>
-        <span style="margin-left: 0px;">注册日期：<span id="enroll_date"></span></span>
+        <span>学历：<span id="degree"></span></span>
+        <span style="margin-left: 110px;">职称：<span id="title"></span></span>
+        <span style="margin-left: 110px;">注册日期：<span id="enroll_date"></span></span>
         <span style="margin-left: 110px;">有效期至：<span id="valid_date"></span></span>
         <span style="margin-left: 110px;">是否有效：<span id="debt"></span></span>
     </p>
@@ -88,7 +88,7 @@
                     });
                 } else {
                     $.ajax({
-                        url: "{{ url_for('main.find_student') }}",
+                        url: "{{ url_for('main.find_faculty') }}",
                         type: "post",
                         data: form,
                         processData: false,
@@ -99,6 +99,8 @@
                             $("#dept").empty();
                             $("#tel").empty();
                             $("#email").empty();
+                            $("#degree").empty();
+                            $("#title").empty();
                             $("#enroll_date").empty();
                             $("#valid_date").empty();
                             $("#debt").empty();
@@ -108,6 +110,8 @@
                                 $("#dept").append(data[0].dept);
                                 $("#tel").append(data[0].tel);
                                 $("#email").append(data[0].email);
+                                $("#degree").append(data[0].degree);
+                                $("#title").append(data[0].title);
                                 $("#enroll_date").append(data[0].enroll_date);
                                 $("#valid_date").append(data[0].valid_date);
                                 if (data[0].debt === false) {
@@ -165,7 +169,7 @@
                                 layui.use('layer', function () {
                                     var layer = layui.layer;
 
-                                    layer.msg('找不到该学生！', {time: 1000});
+                                    layer.msg('找不到该职工信息！', {time: 1000});
                                 });
                             }
                         }
